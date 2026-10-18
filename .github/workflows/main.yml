@@ -7,17 +7,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Unpack and Change Package Name
         run: |
+          # 使用 GitHub 官方源下载 Apktool
           wget https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O apktool
-          wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar -O apktool.jar
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
           chmod +x apktool
-          # 反编译 APK
+          
+          # 反编译 APK（忽略资源错误以防部分加固包报错）
           ./apktool d app.apk -o decompiled
+          
           # 将新包名修改为 com.mycustom.tvlauncher（可自行修改）
           sed -i 's/renameManifestPackage: null/renameManifestPackage: com.mycustom.tvlauncher/g' decompiled/apktool.yml
-          # 重新打包
-          ./apktool b decompiled -o modified_unsigned.apk
+          
+          # 重新打包（加入 --use-aapt2 提高现代 APK 的打包成功率）
+          ./apktool b decompiled --use-aapt2 -o modified_unsigned.apk
 
       - name: Sign APK
         run: |
